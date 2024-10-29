@@ -1,0 +1,12 @@
+data/
+lightning_logs/
+
+# IDEs and OS files
+.DS_Store
+.idea/
+.vscode/
+out
+
+# Python bytecode
+*.py[cod]
+__pycache__/
