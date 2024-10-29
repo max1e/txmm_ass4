@@ -1,4 +1,7 @@
 import string
+
+import numpy as np
+import pandas as pd
 import regex as re
 import nltk
 from nltk import tokenize as tok
@@ -6,12 +9,43 @@ from collections import Counter
 
 
 # Requires following downloads in parent file
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('universal_tagset')
+## nltk.download('punkt')
+## nltk.download('averaged_perceptron_tagger')
+## nltk.download('universal_tagset')
+
+def perform_feature_extraction(df: pd.DataFrame, author_mapping: dict) -> [np.array, np.array]:
+    """
+    Performs feature, and label extraction on a dataframe consisting of the raw pan data.
+    """
+    features = np.stack(df["text"].apply(extract_features), dtype=np.float32)
+    labels = [author_mapping[author] for author in df['author'].values]
+    return features, labels
+
+
+def save_features(features: np.array, labels: np.array, folder_path: str, file_name: str):
+    """
+    Saves extracted features and labels from perform_feature_extraction to csv files for convenience.
+    Saving processing time in re-extracting the features every time the notebook restarts.
+    """
+    features.to_csv(f'{folder_path}/{file_name}_features', header=False, index=False)
+    labels.to_csv(f'./{folder_path}/{file_name}_labels', header=False, index=False)
+
+
+def load_features(folder_path: str, file_name: str) -> [np.array, np.array]:
+    """
+    Returns extracted features and labels from csv files saved by save_features.
+    """
+    features = pd.read_csv(f'{folder_path}/{file_name}_features', header=None)
+    labels = pd.read_csv(f'{folder_path}/{file_name}_labels', header=None)
+    return features, labels
 
 
 def extract_features(text: str) -> list:
+    """
+    Convenience method to extract all features from a text
+    :param text: the text to extract features from
+    :return: a list of all extracted features
+    """
     words = tok.word_tokenize(text)
     sentences = tok.sent_tokenize(text)
 
