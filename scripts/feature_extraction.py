@@ -18,7 +18,7 @@ def perform_feature_extraction(df: pd.DataFrame, author_mapping: dict) -> [np.ar
     Performs feature, and label extraction on a dataframe consisting of the raw pan data.
     """
     features = np.stack(df["text"].apply(extract_features), dtype=np.float32)
-    labels = [author_mapping[author] for author in df['author'].values]
+    labels = np.array(author_mapping[author] for author in df['author'].values)
     return features, labels
 
 
@@ -27,16 +27,16 @@ def save_features(features: np.array, labels: np.array, folder_path: str, file_n
     Saves extracted features and labels from perform_feature_extraction to csv files for convenience.
     Saving processing time in re-extracting the features every time the notebook restarts.
     """
-    features.to_csv(f'{folder_path}/{file_name}_features', header=False, index=False)
-    labels.to_csv(f'./{folder_path}/{file_name}_labels', header=False, index=False)
+    pd.DataFrame(features, columns=None, index=None).to_csv(f'{folder_path}/{file_name}_features', header=False, index=False)
+    pd.DataFrame(labels, columns=None, index=None).to_csv(f'./{folder_path}/{file_name}_labels', header=False, index=False)
 
 
 def load_features(folder_path: str, file_name: str) -> [np.array, np.array]:
     """
     Returns extracted features and labels from csv files saved by save_features.
     """
-    features = pd.read_csv(f'{folder_path}/{file_name}_features', header=None)
-    labels = pd.read_csv(f'{folder_path}/{file_name}_labels', header=None)
+    features = pd.read_csv(f'{folder_path}/{file_name}_features', header=None).to_numpy(dtype=np.float32)
+    labels = pd.read_csv(f'{folder_path}/{file_name}_labels', header=None).to_numpy()
     return features, labels
 
 

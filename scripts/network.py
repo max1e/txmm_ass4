@@ -9,8 +9,8 @@ import lightning as L
 
 class Pan2425Dataset(Dataset):
     def __init__(self, features: np.array, labels: np.array):
-        self.features = features
-        self.labels = labels
+        self.features = torch.from_numpy(features)
+        self.labels = torch.from_numpy(labels)
 
     def __len__(self):
         return len(self.features)
