@@ -18,7 +18,7 @@ def perform_feature_extraction(df: pd.DataFrame, author_mapping: dict) -> [np.ar
     Performs feature, and label extraction on a dataframe consisting of the raw pan data.
     """
     features = np.stack(df["text"].apply(extract_features), dtype=np.float32)
-    labels = np.array(author_mapping[author] for author in df['author'].values)
+    labels = np.array(list(author_mapping[author] for author in df['author'].values))
     return features, labels
 
 
@@ -50,21 +50,21 @@ def extract_features(text: str) -> list:
     sentences = tok.sent_tokenize(text)
 
     return [
-        num_char(text),
-        num_sentences(sentences),
-        num_tokens(words),
-        num_words_without_vowels(words),
-        *special_char_vector(text),
-        continuous_punc_count(text),
-        contraction_count(text),
-        all_caps_words_count(text),
-        emoticon_count(text),
-        happy_emoticons_count(text),
-        sentence_without_capital_start(sentences),
-        *pos_tags_proportion(words),
-        *letter_frequency(text),
-        *function_words_frequency(words),
-        small_i_frequency(text)
+        num_char(text), # 1
+        num_sentences(text, sentences), # 2
+        num_tokens(text, words), # 3
+        num_words_without_vowels(words), # 4
+        *special_char_vector(text), # 5-34 (30)
+        continuous_punc_count(text), # 35
+        contraction_count(text), # 36
+        all_caps_words_count(text), # 37
+        emoticon_count(text), # 38
+        happy_emoticons_count(text), # 39
+        sentence_without_capital_start(sentences), # 40
+        *pos_tags_proportion(words), # 41-57 (17)
+        *letter_frequency(text), # 58-84 (26)
+        *function_words_frequency(words), # 85-174 (90)
+        small_i_frequency(text) # 175
     ]
 
 
@@ -75,18 +75,18 @@ def num_char(text: str) -> int:
     return len(text)
 
 
-def num_sentences(sentences: list[str]) -> int:
+def num_sentences(text: str, sentences: list[str]) -> int:
     """
-    Returns the number of sentences in the text.
+    Returns the number of sentences in the text proportional to the number of characters in the text.
     """
-    return len(sentences)
+    return len(sentences) / num_char(text)
 
 
-def num_tokens(words: list[str]) -> int:
+def num_tokens(text: str, words: list[str]) -> int:
     """
-    Returns the number of tokens (words) in the text.
+    Returns the number of tokens (words) in the text proportional to the number of characters in the text.
     """
-    return len(words)
+    return len(words) / num_char(text)
 
 
 def num_words_without_vowels(words: list[str]) -> int:
