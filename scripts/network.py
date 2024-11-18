@@ -1,16 +1,11 @@
 
-import numpy as np
-
 import torch
 from torch.utils.data import Dataset
-from torch.nn.functional import cross_entropy
-import lightning as L
-
 
 class Pan2425Dataset(Dataset):
-    def __init__(self, features: np.array, labels: np.array):
-        self.features = torch.from_numpy(features)
-        self.labels = torch.from_numpy(labels)
+    def __init__(self, features: torch.tensor, labels: torch.tensor):
+        self.features = features
+        self.labels = labels
 
     def __len__(self):
         return len(self.features)
@@ -19,45 +14,32 @@ class Pan2425Dataset(Dataset):
         return self.features[idx], self.labels[idx]
 
 
-class FullyConnectedNeuralNetwork(L.LightningModule):
-    def __init__(self, n_features=175, n_authors=20, learning_rate=0.0001):
+class AuthorIdentificationNetwork(torch.nn.Module):
+    def __init__(self, input_features:int=175, learning_rate:float=1e-3, weight_decay:float=1e-5):
         super().__init__()
-
         self.net = torch.nn.Sequential(
-            torch.nn.Linear(n_features, 300),
+            torch.nn.Linear(input_features, 300),
+            torch.nn.BatchNorm1d(300),
             torch.nn.ReLU(),
             torch.nn.Linear(300, 200),
             torch.nn.ReLU(),
+            torch.nn.Dropout(0.3),
             torch.nn.Linear(200, 100),
             torch.nn.ReLU(),
-            torch.nn.Linear(100, n_authors),
-            # torch.nn.Softmax(dim=1) # Softmax is applied in loss function.
+            torch.nn.Linear(100, 20),
         )
 
-        self.learning_rate = learning_rate
-
-    def training_step(self, batch, batch_idx):
-        features, labels = batch
-
-        output = self.forward(features)
-        loss = cross_entropy(output, labels)
-
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        features, labels = batch
-
-        output = self.forward(features)
-        loss = cross_entropy(output, labels)
-
-        prediction = torch.argmax(output, dim=1)
-        accuracy = torch.mean((prediction == labels).float())
-
-        self.log("val_loss", loss, on_epoch=True)
-        self.log("val_accuracy", accuracy, on_epoch=True)
+        self.lr = learning_rate
+        self.wd = weight_decay
+        self.loss_function = torch.nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(params=self.net.parameters(), lr=self.lr, weight_decay=self.wd)
 
     def forward(self, x):
         return self.net.forward(x)
 
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters())
+
+    def loss(self, output, y):
+        return self.loss_function(output, y)
+    
+
+
